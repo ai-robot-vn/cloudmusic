@@ -173,14 +173,23 @@
                 </div>
                 
                 <div class="flex items-center gap-3">
+                    <!-- Auth Buttons (Logged Out) -->
                     <div id="auth-buttons" class="flex items-center gap-3">
-                        <button onclick="openAuthModal()" class="text-gray-300 hover:text-white font-bold py-2 px-4 rounded-full text-sm">Đăng ký</button>
-                        <button onclick="openAuthModal()" class="bg-white text-black font-bold py-3 px-8 rounded-full hover:scale-105 transition-transform text-sm">Đăng nhập</button>
+                        <button onclick="openAuthModal('register')" class="text-gray-300 hover:text-white font-bold py-2 px-4 rounded-full text-sm">Đăng ký</button>
+                        <button onclick="openAuthModal('login')" class="bg-white text-black font-bold py-3 px-8 rounded-full hover:scale-105 transition-transform text-sm">Đăng nhập</button>
                     </div>
-                    <div id="user-profile" class="hidden items-center gap-3">
-                        <span id="user-name" class="text-sm font-medium text-gray-300"></span>
-                        <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold shadow-lg cursor-pointer hover:scale-105 transition-transform border-2 border-cloud-800">
-                            <i data-lucide="user" class="w-5 h-5"></i>
+                    <!-- User Profile Dropdown (Logged In) -->
+                    <div id="user-profile" class="hidden items-center gap-3 relative">
+                        <span id="user-name" class="text-sm font-semibold text-gray-200"></span>
+                        <div onclick="toggleUserDropdown()" class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold shadow-lg cursor-pointer hover:scale-105 transition-transform border-2 border-cloud-800 relative">
+                            <i data-lucide="user" class="w-5 h-5 text-white"></i>
+                        </div>
+                        
+                        <!-- Dropdown Menu -->
+                        <div id="user-dropdown" class="absolute right-0 top-12 w-48 bg-cloud-700 rounded-xl shadow-2xl border border-cloud-600 py-1 hidden z-50">
+                            <button onclick="handleLogout()" class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-cloud-600 hover:text-red-300 transition-colors flex items-center gap-2">
+                                <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -196,7 +205,7 @@
                         <i data-lucide="music-4" class="w-12 h-12 text-gray-400"></i>
                     </div>
                     <h2 class="text-2xl font-bold mb-2">Chưa có bài nhạc nào!</h2>
-                    <p class="text-gray-400 max-w-md mb-8">CloudMusic hiện tại đang trống. Hãy là người đầu tiên tải lên những bản nhạc tuyệt vời để mọi người cùng thưởng thức.</p>
+                    <p class="text-gray-400 max-w-md mb-8">CloudMusic hiện tại đang trống. Hãy đăng nhập tài khoản của bạn và tải lên bản nhạc đầu tiên lên dịch vụ lưu trữ đám mây.</p>
                     <button onclick="openUploadModal()" class="bg-white text-black font-bold py-3 px-8 rounded-full hover:scale-105 transition-transform">
                         Tải nhạc lên ngay
                     </button>
@@ -278,27 +287,52 @@
         <span id="toast-message" class="text-sm font-medium"></span>
     </div>
 
-    <!-- Auth Modal -->
+    <!-- Auth Modal (Local Storage Login/Register) -->
     <div id="auth-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
         <div class="bg-cloud-800 rounded-2xl w-full max-w-md p-8 border border-cloud-700 shadow-2xl relative animate-fade-in">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
-            <div class="text-center mb-8">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i data-lucide="cloud" class="w-7 h-7 text-white"></i>
+            
+            <!-- Tab Headers -->
+            <div class="flex border-b border-cloud-700 mb-6">
+                <button id="tab-login" onclick="switchAuthTab('login')" class="flex-1 py-3 text-center font-bold text-blue-500 border-b-2 border-blue-500 focus:outline-none transition-colors">Đăng nhập</button>
+                <button id="tab-register" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent hover:text-white focus:outline-none transition-colors">Đăng ký</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="submitLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Tên đăng nhập</label>
+                    <input type="text" id="login-username" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Nhập tên đăng nhập...">
                 </div>
-                <h2 class="text-3xl font-bold mb-2">Đăng nhập</h2>
-                <p class="text-gray-400">Tham gia CloudMusic để nghe và tải nhạc</p>
-            </div>
-            <div class="space-y-4">
-                <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-full transition-colors flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-5 h-5"></i> Bắt đầu trải nghiệm ngay
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Mật khẩu</label>
+                    <input type="password" id="login-password" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-full transition-colors flex items-center justify-center gap-2 mt-6">
+                    <i data-lucide="log-in" class="w-5 h-5"></i> Vào tài khoản
                 </button>
-                <p class="text-xs text-center text-gray-500 mt-4">
-                    Bằng việc tiếp tục, bạn đồng ý với Điều khoản và Chính sách bảo mật của chúng tôi.
-                </p>
-            </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" onsubmit="submitRegister(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Tên hiển thị (Biệt danh) *</label>
+                    <input type="text" id="reg-displayname" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Vd: Nguyễn Văn A">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Tên đăng nhập *</label>
+                    <input type="text" id="reg-username" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Dùng viết liền không dấu...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-400 mb-1">Mật khẩu *</label>
+                    <input type="password" id="reg-password" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Tối thiểu 6 ký tự">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-full transition-colors flex items-center justify-center gap-2 mt-6">
+                    <i data-lucide="user-plus" class="w-5 h-5"></i> Đăng ký tài khoản
+                </button>
+            </form>
         </div>
     </div>
 
@@ -343,7 +377,7 @@
     <!-- Firebase SDK & Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
@@ -358,14 +392,14 @@
             measurementId: "G-G6RMHQ370F"
         };
 
-        const appId = firebaseConfig.projectId; // Dynamic matching path identifier
+        const appId = firebaseConfig.projectId;
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
         
-        let currentUser = null;
+        let firebaseUser = null;
         let unsubscribeSongs = null;
 
         // Player State
@@ -386,7 +420,6 @@
             
             toastMsg.innerText = message;
             
-            // Set styles based on type
             if (type === 'error') {
                 toast.className = "fixed bottom-28 right-6 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 transform z-[110] flex items-center gap-3";
                 toastIcon.setAttribute('data-lucide', 'alert-circle');
@@ -396,67 +429,161 @@
             }
             
             lucide.createIcons();
-
-            // Animate in
             toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
             
-            // Animate out after 4 seconds
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
             }, 4000);
         };
 
         // -------------------------
-        // AUTHENTICATION LOGIC (RULE 3 Compliance)
+        // LOCAL STORAGE AUTHENTICATION
         // -------------------------
-        async function initAuth() {
+        const getLocalUsers = () => JSON.parse(localStorage.getItem('cloudmusic_users')) || [];
+        const saveLocalUsers = (users) => localStorage.setItem('cloudmusic_users', JSON.stringify(users));
+        const getCurrentLocalUser = () => JSON.parse(localStorage.getItem('cloudmusic_current_user')) || null;
+        const setCurrentLocalUser = (user) => localStorage.setItem('cloudmusic_current_user', JSON.stringify(user));
+
+        window.toggleUserDropdown = () => {
+            const menu = document.getElementById('user-dropdown');
+            menu.classList.toggle('hidden');
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('user-dropdown');
+            const profileBtn = document.getElementById('user-profile');
+            if (dropdown && profileBtn && !profileBtn.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        window.switchAuthTab = (tab) => {
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const formLogin = document.getElementById('login-form');
+            const formRegister = document.getElementById('register-form');
+
+            if (tab === 'login') {
+                tabLogin.className = "flex-1 py-3 text-center font-bold text-blue-500 border-b-2 border-blue-500 focus:outline-none transition-colors";
+                tabRegister.className = "flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent hover:text-white focus:outline-none transition-colors";
+                formLogin.classList.remove('hidden');
+                formRegister.classList.add('hidden');
+            } else {
+                tabRegister.className = "flex-1 py-3 text-center font-bold text-blue-500 border-b-2 border-blue-500 focus:outline-none transition-colors";
+                tabLogin.className = "flex-1 py-3 text-center font-bold text-gray-400 border-b-2 border-transparent hover:text-white focus:outline-none transition-colors";
+                formRegister.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            }
+        };
+
+        window.submitRegister = (e) => {
+            e.preventDefault();
+            const displayName = document.getElementById('reg-displayname').value.trim();
+            const username = document.getElementById('reg-username').value.trim().toLowerCase();
+            const password = document.getElementById('reg-password').value;
+
+            if (password.length < 6) {
+                window.showToast("Mật khẩu phải chứa tối thiểu 6 ký tự!", "error");
+                return;
+            }
+
+            const users = getLocalUsers();
+            if (users.find(u => u.username === username)) {
+                window.showToast("Tên đăng nhập đã tồn tại trên CloudMusic!", "error");
+                return;
+            }
+
+            const newUser = {
+                id: 'local_' + Date.now(),
+                displayName,
+                username,
+                password
+            };
+
+            users.push(newUser);
+            saveLocalUsers(users);
+            setCurrentLocalUser(newUser);
+            
+            window.showToast("Đăng ký tài khoản mới thành công!");
+            updateLocalUserUI();
+            closeAuthModal();
+            e.target.reset();
+        };
+
+        window.submitLogin = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+
+            const users = getLocalUsers();
+            const matchedUser = users.find(u => u.username === username && u.password === password);
+
+            if (!matchedUser) {
+                window.showToast("Sai tên đăng nhập hoặc mật khẩu!", "error");
+                return;
+            }
+
+            setCurrentLocalUser(matchedUser);
+            window.showToast(`Chào mừng trở lại, ${matchedUser.displayName}!`);
+            updateLocalUserUI();
+            closeAuthModal();
+            e.target.reset();
+        };
+
+        window.handleLogout = () => {
+            setCurrentLocalUser(null);
+            updateLocalUserUI();
+            window.showToast("Đã đăng xuất tài khoản!");
+        };
+
+        function updateLocalUserUI() {
+            const current = getCurrentLocalUser();
+            const authBtn = document.getElementById('auth-buttons');
+            const profile = document.getElementById('user-profile');
+            const userName = document.getElementById('user-name');
+
+            if (current) {
+                authBtn.classList.add('hidden');
+                profile.classList.remove('hidden');
+                profile.classList.add('flex');
+                userName.innerText = current.displayName;
+            } else {
+                authBtn.classList.remove('hidden');
+                profile.classList.add('hidden');
+                profile.classList.remove('flex');
+            }
+        }
+
+        // -------------------------
+        // SILENT FIREBASE AUTH (For Firestore Security Access)
+        // -------------------------
+        async function silentFirebaseAuth() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
-                console.error("Auth error:", error);
-                window.showToast("Lỗi xác thực người dùng!", "error");
+                console.error("Firebase silent auth failed:", error);
             }
         }
 
         onAuthStateChanged(auth, (user) => {
-            currentUser = user;
+            firebaseUser = user;
             if (user) {
-                // UI Update for Logged In User
-                document.getElementById('auth-buttons').classList.add('hidden');
-                document.getElementById('user-profile').classList.remove('hidden');
-                document.getElementById('user-profile').classList.add('flex');
-                document.getElementById('user-name').innerText = `User_${user.uid.substring(0, 5)}`;
-                closeAuthModal();
-                
-                // Fetch Data on Auth completion
+                // Once firebase background auth is ready, download songs list
                 fetchSongs();
-            } else {
-                // UI Update for Logged Out User
-                document.getElementById('auth-buttons').classList.remove('hidden');
-                document.getElementById('user-profile').classList.add('hidden');
-                document.getElementById('user-profile').classList.remove('flex');
-                if (unsubscribeSongs) unsubscribeSongs();
             }
         });
-
-        window.handleLogin = () => {
-            initAuth();
-        };
 
         // -------------------------
         // DATABASE LOGIC (Firestore) (RULE 1 & 2 Compliance)
         // -------------------------
         function fetchSongs() {
-            if (!currentUser) return;
+            if (!firebaseUser) return;
 
             // RULE 1: Strict Paths
             const songsRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
             
-            // RULE 2: No Complex Queries -> Sorting in-memory instead of compound queries
+            // RULE 2: Simple snapshot, memory sorting to avoid indexing delays
             unsubscribeSongs = onSnapshot(songsRef, (snapshot) => {
                 const songs = [];
                 snapshot.forEach((doc) => {
@@ -474,7 +601,7 @@
                 renderSongs(songs);
             }, (error) => {
                 console.error("Error fetching songs:", error);
-                window.showToast("Không thể tải danh sách nhạc!", "error");
+                window.showToast("Không thể tải danh sách nhạc từ hệ thống đám mây!", "error");
             });
         }
 
@@ -500,8 +627,11 @@
 
         window.handleUpload = async (e) => {
             e.preventDefault();
-            if (!currentUser) {
-                openAuthModal();
+            const currentLocalUser = getCurrentLocalUser();
+            
+            if (!currentLocalUser) {
+                window.showToast("Vui lòng đăng nhập tài khoản trước khi tải nhạc lên!", "error");
+                openAuthModal('login');
                 return;
             }
 
@@ -528,14 +658,14 @@
             try {
                 // Phase 1: Upload Cover image to Storage (0-30% progression)
                 statusText.innerText = "Đang tải ảnh bìa lên Cloud... (Bước 1/2)";
-                const coverPath = `artifacts/${appId}/uploads/${currentUser.uid}/covers/${Date.now()}_${coverFile.name}`;
+                const coverPath = `artifacts/${appId}/uploads/${currentLocalUser.id}/covers/${Date.now()}_${coverFile.name}`;
                 const coverUrl = await uploadFile(coverFile, coverPath, (p) => {
                     progressBar.style.width = `${p * 0.3}%`; 
                 });
 
                 // Phase 2: Upload Audio MP3 to Storage (30-90% progression)
                 statusText.innerText = "Đang tải tệp âm nhạc, vui lòng giữ kết nối... (Bước 2/2)";
-                const audioPath = `artifacts/${appId}/uploads/${currentUser.uid}/audio/${Date.now()}_${audioFile.name}`;
+                const audioPath = `artifacts/${appId}/uploads/${currentLocalUser.id}/audio/${Date.now()}_${audioFile.name}`;
                 const audioUrl = await uploadFile(audioFile, audioPath, (p) => {
                     progressBar.style.width = `${30 + (p * 0.6)}%`; 
                 });
@@ -543,14 +673,15 @@
                 statusText.innerText = "Đang hoàn tất lưu bài nhạc...";
                 progressBar.style.width = `100%`;
 
-                // Phase 3: Store URLs to Firestore Database (RULE 1 Path structure)
+                // Phase 3: Store URLs to Firestore Database with Local Storage user metadata
                 const songsRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
                 await addDoc(songsRef, {
                     title,
                     artist,
                     coverUrl,
                     audioUrl,
-                    uploaderId: currentUser.uid,
+                    uploaderId: currentLocalUser.id,
+                    uploaderName: currentLocalUser.displayName,
                     createdAt: serverTimestamp()
                 });
                 
@@ -594,6 +725,8 @@
                 card.className = "bg-cloud-700 p-4 rounded-xl hover:bg-cloud-600 transition duration-300 group cursor-pointer animate-fade-in";
                 card.style.animationDelay = `${index * 50}ms`;
                 
+                const uploaderDisplay = song.uploaderName ? `Tải lên bởi: ${song.uploaderName}` : "Đóng góp cộng đồng";
+
                 card.innerHTML = `
                     <div class="relative w-full aspect-square mb-4 shadow-lg">
                         <img src="${song.coverUrl}" alt="${song.title}" class="w-full h-full object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1614680376593-902f74cf0d41?q=80&w=400&auto=format&fit=crop'">
@@ -603,6 +736,7 @@
                     </div>
                     <h3 class="font-bold text-white truncate text-base mb-1">${song.title}</h3>
                     <p class="text-gray-400 text-sm truncate">${song.artist}</p>
+                    <p class="text-gray-500 text-[10px] truncate mt-1 italic">${uploaderDisplay}</p>
                 `;
                 
                 // Play on clicking card anywhere
@@ -729,12 +863,16 @@
         // -------------------------
         // MODAL CONTROLS
         // -------------------------
-        window.openAuthModal = () => document.getElementById('auth-modal').classList.remove('hidden');
+        window.openAuthModal = (defaultTab = 'login') => {
+            document.getElementById('auth-modal').classList.remove('hidden');
+            switchAuthTab(defaultTab);
+        };
         window.closeAuthModal = () => document.getElementById('auth-modal').classList.add('hidden');
         
         window.openUploadModal = () => {
-            if (!currentUser) {
-                openAuthModal();
+            if (!getCurrentLocalUser()) {
+                window.showToast("Vui lòng đăng nhập tài khoản trước khi tải nhạc!", "error");
+                openAuthModal('login');
                 return;
             }
             document.getElementById('upload-modal').classList.remove('hidden');
@@ -753,8 +891,9 @@
             }
         });
         
-        // Start Auth process immediately (for anonymous preview environments)
-        initAuth();
+        // Start Auth process
+        updateLocalUserUI();
+        silentFirebaseAuth();
 
     </script>
 </body>
