@@ -270,7 +270,13 @@
         </div>
     </footer>
 
-    <!-- MODALS -->
+    <!-- MODALS & TOASTS -->
+
+    <!-- Custom Toast Message (Replaces alert) -->
+    <div id="toast" class="fixed bottom-28 right-6 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-[110] flex items-center gap-3">
+        <i data-lucide="info" class="w-5 h-5 text-white" id="toast-icon"></i>
+        <span id="toast-message" class="text-sm font-medium"></span>
+    </div>
 
     <!-- Auth Modal -->
     <div id="auth-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] hidden flex items-center justify-center">
@@ -286,7 +292,6 @@
                 <p class="text-gray-400">Tham gia CloudMusic để nghe và tải nhạc</p>
             </div>
             <div class="space-y-4">
-                <!-- For demo simplicity, we use an anonymous login masked as an enter button -->
                 <button onclick="handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-full transition-colors flex items-center justify-center gap-2">
                     <i data-lucide="log-in" class="w-5 h-5"></i> Bắt đầu trải nghiệm ngay
                 </button>
@@ -337,47 +342,29 @@
 
     <!-- Firebase SDK & Logic -->
     <script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyBiu1Xdkv4TZpMKq0pN1JsaX9T9T39TmTg",
-    authDomain: "cloudmusic-612e4.firebaseapp.com",
-    projectId: "cloudmusic-612e4",
-    storageBucket: "cloudmusic-612e4.firebasestorage.app",
-    messagingSenderId: "477732473752",
-    appId: "1:477732473752:web:b1824c9f011a8e45d5b9ed",
-    measurementId: "G-G6RMHQ370F"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
-    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // Environment variables setup
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cloudmusic-default-app';
-        let firebaseConfig = {};
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { /* Fallback config */ };
-        } catch (e) {
-            console.error("Firebase config parse error", e);
-        }
+        // Integrated User-provided Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBiu1Xdkv4TZpMKq0pN1JsaX9T9T39TmTg",
+            authDomain: "cloudmusic-612e4.firebaseapp.com",
+            projectId: "cloudmusic-612e4",
+            storageBucket: "cloudmusic-612e4.firebasestorage.app",
+            messagingSenderId: "477732473752",
+            appId: "1:477732473752:web:b1824c9f011a8e45d5b9ed",
+            measurementId: "G-G6RMHQ370F"
+        };
+
+        const appId = firebaseConfig.projectId; // Dynamic matching path identifier
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const storage = getStorage(app);
+        
         let currentUser = null;
         let unsubscribeSongs = null;
 
@@ -390,7 +377,37 @@
         lucide.createIcons();
 
         // -------------------------
-        // AUTHENTICATION LOGIC
+        // CUSTOM TOAST MESSAGE SYSTEM
+        // -------------------------
+        window.showToast = (message, type = 'success') => {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+            
+            toastMsg.innerText = message;
+            
+            // Set styles based on type
+            if (type === 'error') {
+                toast.className = "fixed bottom-28 right-6 bg-red-600 text-white px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 transform z-[110] flex items-center gap-3";
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+            } else {
+                toast.className = "fixed bottom-28 right-6 bg-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl transition-all duration-300 transform z-[110] flex items-center gap-3";
+                toastIcon.setAttribute('data-lucide', 'check-circle-2');
+            }
+            
+            lucide.createIcons();
+
+            // Animate in
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            
+            // Animate out after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 4000);
+        };
+
+        // -------------------------
+        // AUTHENTICATION LOGIC (RULE 3 Compliance)
         // -------------------------
         async function initAuth() {
             try {
@@ -401,6 +418,7 @@
                 }
             } catch (error) {
                 console.error("Auth error:", error);
+                window.showToast("Lỗi xác thực người dùng!", "error");
             }
         }
 
@@ -411,27 +429,26 @@
                 document.getElementById('auth-buttons').classList.add('hidden');
                 document.getElementById('user-profile').classList.remove('hidden');
                 document.getElementById('user-profile').classList.add('flex');
-                document.getElementById('user-name').innerText = user.uid.substring(0, 6);
+                document.getElementById('user-name').innerText = `User_${user.uid.substring(0, 5)}`;
                 closeAuthModal();
                 
-                // Fetch Data
+                // Fetch Data on Auth completion
                 fetchSongs();
             } else {
                 // UI Update for Logged Out User
                 document.getElementById('auth-buttons').classList.remove('hidden');
                 document.getElementById('user-profile').classList.add('hidden');
                 document.getElementById('user-profile').classList.remove('flex');
-                if(unsubscribeSongs) unsubscribeSongs();
+                if (unsubscribeSongs) unsubscribeSongs();
             }
         });
 
-        // Expose function to window for the modal button
         window.handleLogin = () => {
             initAuth();
         };
 
         // -------------------------
-        // DATABASE LOGIC (Firestore)
+        // DATABASE LOGIC (Firestore) (RULE 1 & 2 Compliance)
         // -------------------------
         function fetchSongs() {
             if (!currentUser) return;
@@ -439,28 +456,29 @@
             // RULE 1: Strict Paths
             const songsRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
             
-            // Note: Keeping query simple as per RULE 2 (no complex orderBy right away if index needed, but serverTimestamp usually works. We will sort in JS to be safe)
+            // RULE 2: No Complex Queries -> Sorting in-memory instead of compound queries
             unsubscribeSongs = onSnapshot(songsRef, (snapshot) => {
                 const songs = [];
                 snapshot.forEach((doc) => {
                     songs.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Sort by time created in memory
+                // Sort by date created safely in memory
                 songs.sort((a, b) => {
                     const timeA = a.createdAt ? a.createdAt.toMillis() : 0;
                     const timeB = b.createdAt ? b.createdAt.toMillis() : 0;
-                    return timeA - timeB; // Oldest first, or change to timeB - timeA for newest
+                    return timeB - timeA; // Newest song first!
                 });
 
                 currentSongList = songs;
                 renderSongs(songs);
             }, (error) => {
                 console.error("Error fetching songs:", error);
+                window.showToast("Không thể tải danh sách nhạc!", "error");
             });
         }
 
-        // Helper function để upload file lên Firebase Storage
+        // Helper function to handle upload to Firebase Storage
         async function uploadFile(file, path, progressCallback) {
             return new Promise((resolve, reject) => {
                 const storageRef = ref(storage, path);
@@ -493,7 +511,7 @@
             const audioFile = document.getElementById('up-audio').files[0];
             
             if (!coverFile || !audioFile) {
-                alert("Vui lòng chọn đầy đủ ảnh bìa và file âm thanh!");
+                window.showToast("Vui lòng chọn đầy đủ ảnh bìa và file nhạc!", "error");
                 return;
             }
 
@@ -502,30 +520,30 @@
             const progressBar = document.getElementById('upload-progress-bar');
             const statusText = document.getElementById('upload-status');
             
-            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Đang xử lý...`;
+            btn.innerHTML = `<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> Đang tải lên...`;
             btn.disabled = true;
             progressContainer.classList.remove('hidden');
             statusText.classList.remove('hidden');
 
             try {
-                // 1. Tải lên ảnh bìa (chiếm 0-30% thanh tiến trình)
-                statusText.innerText = "Đang tải ảnh bìa... (1/2)";
+                // Phase 1: Upload Cover image to Storage (0-30% progression)
+                statusText.innerText = "Đang tải ảnh bìa lên Cloud... (Bước 1/2)";
                 const coverPath = `artifacts/${appId}/uploads/${currentUser.uid}/covers/${Date.now()}_${coverFile.name}`;
                 const coverUrl = await uploadFile(coverFile, coverPath, (p) => {
                     progressBar.style.width = `${p * 0.3}%`; 
                 });
 
-                // 2. Tải lên file nhạc (chiếm 30%-90% thanh tiến trình)
-                statusText.innerText = "Đang tải file âm thanh, vui lòng đợi... (2/2)";
+                // Phase 2: Upload Audio MP3 to Storage (30-90% progression)
+                statusText.innerText = "Đang tải tệp âm nhạc, vui lòng giữ kết nối... (Bước 2/2)";
                 const audioPath = `artifacts/${appId}/uploads/${currentUser.uid}/audio/${Date.now()}_${audioFile.name}`;
                 const audioUrl = await uploadFile(audioFile, audioPath, (p) => {
                     progressBar.style.width = `${30 + (p * 0.6)}%`; 
                 });
 
-                statusText.innerText = "Đang lưu thông tin bài hát...";
+                statusText.innerText = "Đang hoàn tất lưu bài nhạc...";
                 progressBar.style.width = `100%`;
 
-                // 3. Lưu URL vào Firestore Database
+                // Phase 3: Store URLs to Firestore Database (RULE 1 Path structure)
                 const songsRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
                 await addDoc(songsRef, {
                     title,
@@ -536,6 +554,7 @@
                     createdAt: serverTimestamp()
                 });
                 
+                window.showToast("Đã đăng tải nhạc lên Cloud thành công!");
                 closeUploadModal();
                 e.target.reset();
                 progressBar.style.width = '0%';
@@ -544,7 +563,7 @@
                 
             } catch (error) {
                 console.error("Upload error:", error);
-                alert("Lỗi tải lên. Đảm bảo file không quá lớn và kết nối mạng ổn định.");
+                window.showToast("Đã xảy ra lỗi khi tải nhạc. Vui lòng thử lại!", "error");
             } finally {
                 btn.innerHTML = `<i data-lucide="cloud-upload" class="w-5 h-5"></i> Lưu bài nhạc`;
                 btn.disabled = false;
@@ -577,7 +596,7 @@
                 
                 card.innerHTML = `
                     <div class="relative w-full aspect-square mb-4 shadow-lg">
-                        <img src="${song.coverUrl}" alt="${song.title}" class="w-full h-full object-cover rounded-md">
+                        <img src="${song.coverUrl}" alt="${song.title}" class="w-full h-full object-cover rounded-md" onerror="this.src='https://images.unsplash.com/photo-1614680376593-902f74cf0d41?q=80&w=400&auto=format&fit=crop'">
                         <button class="absolute bottom-2 right-2 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 group-hover:translate-y-0 translate-y-2 transition-all shadow-xl hover:scale-105 hover:bg-blue-400" onclick="event.stopPropagation(); playSong(${index})">
                             <i data-lucide="play" class="w-6 h-6 text-white fill-current ml-1"></i>
                         </button>
@@ -588,7 +607,6 @@
                 
                 // Play on clicking card anywhere
                 card.addEventListener('click', () => window.playSong(index));
-                
                 grid.appendChild(card);
             });
             lucide.createIcons();
@@ -603,7 +621,10 @@
 
             currentPlayingIndex = index;
             audio.src = song.audioUrl;
-            audio.play();
+            audio.play().catch(err => {
+                console.error("Playback error:", err);
+                window.showToast("Không thể phát file nhạc này! Vui lòng kiểm tra lại định dạng file.", "error");
+            });
 
             // Update UI
             document.getElementById('player-cover').src = song.coverUrl;
@@ -656,7 +677,10 @@
 
         audio.addEventListener('ended', () => {
             updatePlayPauseUI(false);
-            // Optionally play next song here
+            // Play next automatically if available
+            if (currentPlayingIndex < currentSongList.length - 1) {
+                window.playSong(currentPlayingIndex + 1);
+            }
         });
 
         // Seek Bar logic
