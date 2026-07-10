@@ -605,7 +605,14 @@
         async function uploadFile(file, path, progressCallback) {
             return new Promise((resolve, reject) => {
                 const storageRef = ref(storage, path);
-                const uploadTask = uploadBytesResumable(storageRef, file);
+                
+                // [TỐI ƯU ĐÁM MÂY] Kích hoạt CDN Cache để tải nhạc cực nhanh khi phát
+                const metadata = {
+                    contentType: file.type,
+                    cacheControl: 'public,max-age=31536000' // Lưu bộ nhớ đệm 1 năm
+                };
+
+                const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
                 uploadTask.on('state_changed',
                     (snapshot) => {
@@ -637,6 +644,13 @@
             
             if (!audioFile) {
                 window.showToast("Vui lòng chọn file nhạc!", "error");
+                return;
+            }
+
+            // [TỐI ƯU ĐÁM MÂY] Giới hạn dung lượng tải lên để đảm bảo tốc độ cực nhanh
+            const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+            if (audioFile.size > MAX_FILE_SIZE) {
+                window.showToast("File nhạc quá nặng! Hãy chọn file dưới 15MB để tối ưu tốc độ.", "error");
                 return;
             }
 
