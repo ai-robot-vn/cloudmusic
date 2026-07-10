@@ -359,7 +359,7 @@
                 
                 <!-- Progress bar for upload -->
                 <div id="upload-progress-container" class="hidden w-full bg-cloud-900 rounded-full h-2.5 mt-2 border border-cloud-600 overflow-hidden">
-                    <div id="upload-progress-bar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div id="upload-progress-bar" class="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-75 ease-out shadow-[0_0_10px_rgba(59,130,246,0.8)]" style="width: 0%"></div>
                 </div>
                 <p id="upload-status" class="text-xs text-center text-gray-400 mt-2 hidden">Đang chuẩn bị tải lên...</p>
 
@@ -616,7 +616,9 @@
 
                 uploadTask.on('state_changed',
                     (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        // Tính toán % và cộng thêm 5% buffer để thanh chạy tạo cảm giác nhanh hơn lúc đầu
+                        let progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        if (progress > 0 && progress < 95) progress += 5; 
                         progressCallback(progress);
                     },
                     (error) => reject(error),
@@ -647,10 +649,10 @@
                 return;
             }
 
-            // [TỐI ƯU ĐÁM MÂY] Giới hạn dung lượng tải lên để đảm bảo tốc độ cực nhanh
-            const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
+            // [TỐI ƯU ĐÁM MÂY] Giới hạn dung lượng tải lên 10MB cho tốc độ cực cao
+            const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
             if (audioFile.size > MAX_FILE_SIZE) {
-                window.showToast("File nhạc quá nặng! Hãy chọn file dưới 15MB để tối ưu tốc độ.", "error");
+                window.showToast("File nhạc quá nặng! Hãy chọn file dưới 10MB để nền tảng luôn mượt mà.", "error");
                 return;
             }
 
@@ -664,6 +666,10 @@
             progressContainer.classList.remove('hidden');
             statusText.classList.remove('hidden');
 
+            // Phản hồi UI tức thì (Ảo giác tốc độ)
+            progressBar.style.width = '5%';
+            statusText.innerText = "Đang thiết lập luồng truyền tải tốc độ cao...";
+
             try {
                 // Tự động gán các ảnh bìa nghệ thuật chất lượng cao từ kho ảnh nhạc ngẫu nhiên
                 const fallbackCovers = [
@@ -675,14 +681,14 @@
                 ];
                 const coverUrl = fallbackCovers[Math.floor(Math.random() * fallbackCovers.length)];
 
-                // Chỉ tải duy nhất file nhạc lên Storage để tối ưu tốc độ tối đa
-                statusText.innerText = "Đang tải tệp âm nhạc lên Đám mây... (1/1)";
+                // Chỉ tải duy nhất file nhạc lên Storage
                 const audioPath = `artifacts/${appId}/uploads/${currentLocalUser.id}/audio/${Date.now()}_${audioFile.name}`;
                 const audioUrl = await uploadFile(audioFile, audioPath, (p) => {
-                    progressBar.style.width = `${p}%`; 
+                    progressBar.style.width = `${p}%`;
+                    statusText.innerText = `Đang tải dữ liệu âm thanh... ${Math.round(p)}%`;
                 });
 
-                statusText.innerText = "Đang hoàn tất lưu bài nhạc...";
+                statusText.innerText = "Đang đồng bộ hóa đám mây...";
                 progressBar.style.width = `100%`;
 
                 // Lưu thông tin vào database Firestore
