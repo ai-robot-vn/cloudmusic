@@ -337,6 +337,29 @@
 
     <!-- Firebase SDK & Logic -->
     <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyBiu1Xdkv4TZpMKq0pN1JsaX9T9T39TmTg",
+    authDomain: "cloudmusic-612e4.firebaseapp.com",
+    projectId: "cloudmusic-612e4",
+    storageBucket: "cloudmusic-612e4.firebasestorage.app",
+    messagingSenderId: "477732473752",
+    appId: "1:477732473752:web:b1824c9f011a8e45d5b9ed",
+    measurementId: "G-G6RMHQ370F"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
