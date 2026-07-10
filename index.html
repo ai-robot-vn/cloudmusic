@@ -353,10 +353,6 @@
                     <input type="text" id="up-artist" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors" placeholder="Vd: Ed Sheeran">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-400 mb-1">Ảnh bìa (File hình ảnh) *</label>
-                    <input type="file" id="up-cover" accept="image/*" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer">
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-gray-400 mb-1">File Audio (MP3/WAV) *</label>
                     <input type="file" id="up-audio" accept="audio/*" required class="w-full bg-cloud-900 border border-cloud-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cloud-700 file:text-white hover:file:bg-cloud-600 cursor-pointer">
                 </div>
@@ -637,11 +633,10 @@
 
             const title = document.getElementById('up-title').value;
             const artist = document.getElementById('up-artist').value;
-            const coverFile = document.getElementById('up-cover').files[0];
             const audioFile = document.getElementById('up-audio').files[0];
             
-            if (!coverFile || !audioFile) {
-                window.showToast("Vui lòng chọn đầy đủ ảnh bìa và file nhạc!", "error");
+            if (!audioFile) {
+                window.showToast("Vui lòng chọn file nhạc!", "error");
                 return;
             }
 
@@ -656,24 +651,27 @@
             statusText.classList.remove('hidden');
 
             try {
-                // Phase 1: Upload Cover image to Storage (0-30% progression)
-                statusText.innerText = "Đang tải ảnh bìa lên Cloud... (Bước 1/2)";
-                const coverPath = `artifacts/${appId}/uploads/${currentLocalUser.id}/covers/${Date.now()}_${coverFile.name}`;
-                const coverUrl = await uploadFile(coverFile, coverPath, (p) => {
-                    progressBar.style.width = `${p * 0.3}%`; 
-                });
+                // Tự động gán các ảnh bìa nghệ thuật chất lượng cao từ kho ảnh nhạc ngẫu nhiên
+                const fallbackCovers = [
+                    "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?q=80&w=400&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400&auto=format&fit=crop",
+                    "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=400&auto=format&fit=crop"
+                ];
+                const coverUrl = fallbackCovers[Math.floor(Math.random() * fallbackCovers.length)];
 
-                // Phase 2: Upload Audio MP3 to Storage (30-90% progression)
-                statusText.innerText = "Đang tải tệp âm nhạc, vui lòng giữ kết nối... (Bước 2/2)";
+                // Chỉ tải duy nhất file nhạc lên Storage để tối ưu tốc độ tối đa
+                statusText.innerText = "Đang tải tệp âm nhạc lên Đám mây... (1/1)";
                 const audioPath = `artifacts/${appId}/uploads/${currentLocalUser.id}/audio/${Date.now()}_${audioFile.name}`;
                 const audioUrl = await uploadFile(audioFile, audioPath, (p) => {
-                    progressBar.style.width = `${30 + (p * 0.6)}%`; 
+                    progressBar.style.width = `${p}%`; 
                 });
 
                 statusText.innerText = "Đang hoàn tất lưu bài nhạc...";
                 progressBar.style.width = `100%`;
 
-                // Phase 3: Store URLs to Firestore Database with Local Storage user metadata
+                // Lưu thông tin vào database Firestore
                 const songsRef = collection(db, 'artifacts', appId, 'public', 'data', 'songs');
                 await addDoc(songsRef, {
                     title,
